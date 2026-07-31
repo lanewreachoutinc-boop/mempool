@@ -138,11 +138,14 @@ export async function insertTestBlock(blockData: {
   tx_count?: number;
   difficulty?: number;
   poolId?: number | null;
+  stale?: boolean;
+  fees?: number;
 }) {
   const timestamp = blockData.blockTimestamp || new Date();
   const size = blockData.size || 1000000;
   const weight = blockData.weight || 4000000;
   const txCount = blockData.tx_count || 2000;
+  const fees = blockData.fees !== undefined ? blockData.fees : 50000000;
 
   await DB.query(
     `INSERT INTO blocks (
@@ -170,9 +173,9 @@ export async function insertTestBlock(blockData: {
       '0000000000000000000000000000000000000000000000000000000000000000',
       '0000000000000000000000000000000000000000000000000000000000000000',
       timestamp,
-      0,  // stale = false
+      blockData.stale ? 1 : 0,
       // Required fields with defaults
-      50000000,  // fees (in sats)
+      fees,  // fees (in sats)
       JSON.stringify([0, 0, 0, 0, 0, 0, 0]),  // fee_span (JSON array)
       10000,  // median_fee (in sats)
       size / txCount,  // avg_tx_size
@@ -184,6 +187,33 @@ export async function insertTestBlock(blockData: {
       weight,  // segwit_total_weight
       '00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000',  // header (160 chars)
       0  // utxoset_change
+    ]
+  );
+}
+
+/**
+ * Insert a test block audit into the database
+ */
+export async function insertTestBlockAudit(auditData: {
+  hash: string;
+  height: number;
+  matchRate: number;
+  expectedFees?: number | null;
+  time?: Date;
+}) {
+  await DB.query(
+    `INSERT INTO blocks_audits (
+      hash, height, time, match_rate, expected_fees, missing_txs, added_txs
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    [
+      auditData.hash,
+      auditData.height,
+      auditData.time || new Date(),
+      auditData.matchRate,
+      auditData.expectedFees !== undefined ? auditData.expectedFees : null,
+      '[]',  // missing_txs
+      '[]'   // added_txs
     ]
   );
 }
