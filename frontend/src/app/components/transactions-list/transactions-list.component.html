@@ -22,8 +22,8 @@
       </div>
     }
     @if (showColdcardWarning) {
-      <div class="alert alert-danger alert-dismissible coldcard-warning" role="alert">
-        <a [routerLink]="['/docs/faq' | relativeUrl]" fragment="why-may-my-multisig-funds-be-at-risk" i18n="transaction.coldcard.warning">Warning for ColdCard users: If this multisig wallet uses default setup coldcard devices, the funds may be at risk while this transaction is unconfirmed. Click this warning to learn more.</a>
+      <div class="alert alert-danger alert-dismissible" role="alert">
+        <a [routerLink]="['/docs/faq' | relativeUrl]" fragment="why-may-my-multisig-funds-be-at-risk"><span>⚠️ </span><span i18n="transaction.coldcard.warning">Warning for ColdCard users: The funds of this transaction may be at risk while unconfirmed under default multisig setups.</span></a>
         <button type="button" class="btn-close btn-close-white" aria-label="Close" i18n-aria-label (click)="dismissWarning()"></button>
       </div>
     }
