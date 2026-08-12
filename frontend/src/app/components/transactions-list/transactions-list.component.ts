@@ -72,6 +72,7 @@ export class TransactionsListComponent implements OnInit, OnChanges, OnDestroy {
   showTaprootControlBlock: { [vinIndex: number]: boolean } = {};
   showOrdData: { [key: string]: { show: boolean; inscriptions?: Inscription[]; runestone?: Runestone, runeInfo?: { [id: string]: { etching: Etching; txid: string; } }; } } = {};
   similarityMatches: Map<string, Map<string, { score: number, match: AddressMatch, group: number }>> = new Map();
+  showColdcardWarning: boolean = false;
 
   selectedSig: { txIndex: number, vindex: number, sig: SigInfo } | null = null;
   sigHighlights: { vin: boolean[], vout: boolean[] } = { vin: [], vout: [] };
@@ -186,6 +187,7 @@ export class TransactionsListComponent implements OnInit, OnChanges, OnDestroy {
     });
 
     this.updateAddressSimilarities();
+    this.updateShowColdcardWarning();
   }
 
   refreshPrice(): void {
@@ -476,6 +478,33 @@ export class TransactionsListComponent implements OnInit, OnChanges, OnDestroy {
     }
   }
 
+  updateShowColdcardWarning(): void {
+    const showCCWarningPref = this.storageService.getValue('showTxColdcardWarning');
+    // there's only one tx, it's the tx page, it's unconfirmed, it contains inputs that are p2sh, v0_p2wsh or p2sh-p2wsh, is multisig and network is mainnet
+    if (showCCWarningPref && showCCWarningPref === 'false') {
+      return;
+    }
+
+    if (!this.transactionPage || this.txPreview) {
+      return;
+    }
+
+    if (this.transactions.length > 1 || this.transactions[0].status.confirmed) {
+      return;
+    }
+
+    const vinPossibleCC: Vin[] = this.transactions[0].vin.filter((input: Vin) => {
+      const addressTypeInfo = new AddressTypeInfo(this.network || 'mainnet', input.prevout.scriptpubkey_address, input.prevout?.scriptpubkey_type as AddressType, [input]);
+      return ['p2sh', 'v0_p2wsh', 'p2sh-p2wsh'].includes(addressTypeInfo.type) && !!addressTypeInfo.isMultisig && addressTypeInfo.network === 'mainnet';
+    });
+
+    if (vinPossibleCC.length === 0) {
+      return;
+    }
+
+    this.showColdcardWarning = true;
+  }
+
   // assume any address with 12 or more contiguous repeated substrings is fake
   fakeScriptHashRegex = new RegExp(/(.+?)\1{11,}/);
   isFakeScripthash(vout: Vout): boolean {
@@ -711,6 +740,12 @@ export class TransactionsListComponent implements OnInit, OnChanges, OnDestroy {
       default:
         return false;
     }
+  }
+
+  dismissWarning(): void {
+    this.storageService.setValue('showTxColdcardWarning', 'false');
+    this.showColdcardWarning = false;
+    this.ref.markForCheck();
   }
 
   ngOnDestroy(): void {

@@ -416,6 +416,22 @@ h2 {
 	}
 }
 
+.coldcard-warning {
+	display: flex;
+	align-items: center;
+	position: relative;
+  background-color: #b71c1c;
+  border-color: #b71c1c;
+	a {
+		color: #fff;
+	}
+}
+
+.btn-close:hover,
+.btn-close:focus {
+  opacity: 1;
+}
+
 @keyframes acceleratePulse {
   0% { background-color: #653b9c; box-shadow: #ad7de57f 0px 0px 12px -2px; }
   50% { background-color: #8457bb; box-shadow: #ad7de5 0px 0px 18px -2px;}
