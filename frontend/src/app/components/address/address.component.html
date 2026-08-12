@@ -1,4 +1,7 @@
 <div class="container-xl" [class.liquid-address]="network === 'liquid' || network === 'liquidtestnet'">
+  @if (showColdcardWarning && !isLoadingAddress && !error) {
+    <ng-container *ngTemplateOutlet="coldcardWarning"></ng-container>
+  }
   <div class="title-address">
     <h1 i18n="shared.address">Address</h1>
     <div class="tx-link">
@@ -15,6 +18,7 @@
   </div>
 
   <div class="clearfix"></div>
+
 
   <ng-template [ngIf]="!isLoadingAddress && !error">
     <div class="box">
@@ -260,6 +264,13 @@
 </div>
 
 <br>
+
+<ng-template #coldcardWarning>
+  <div class="alert alert-danger alert-dismissible coldcard-warning" role="alert">
+    <a [routerLink]="['/docs/faq' | relativeUrl]" fragment="why-may-my-multisig-funds-be-at-risk" i18n="address.coldcard.warning">Warning for ColdCard users: If this multisig wallet uses default setup coldcard devices, the funds in this address may be at risk. Click this warning to learn more.</a>
+    <button type="button" class="btn-close btn-close-white" aria-label="Close" i18n-aria-label (click)="dismissWarning()"></button>
+  </div>
+</ng-template>
 
 <ng-template #confidentialTd>
   <td i18n="shared.confidential">Confidential</td>

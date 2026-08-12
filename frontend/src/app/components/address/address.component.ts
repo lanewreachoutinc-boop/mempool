@@ -14,6 +14,7 @@ import { seoDescriptionNetwork } from '@app/shared/common.utils';
 import { AddressInformation } from '@interfaces/node-api.interface';
 import { AddressTypeInfo } from '@app/shared/address-utils';
 import { extractTapLeaves, fillTapTree, convertTextToBuffer, PsbtKeyValue } from '@app/shared/transaction.utils';
+import { StorageService } from '@app/services/storage.service';
 
 class AddressStats implements ChainStats {
   address: string;
@@ -138,6 +139,8 @@ export class AddressComponent implements OnInit, OnDestroy {
   now = Date.now() / 1000;
   balancePeriod: 'all' | '1m' = 'all';
 
+  showColdcardWarning: boolean = false;
+
   private tempTransactions: Transaction[];
   private timeTxIndexes: number[];
   private lastTransactionTxId: string;
@@ -151,6 +154,7 @@ export class AddressComponent implements OnInit, OnDestroy {
     private apiService: ApiService,
     private seoService: SeoService,
     private formBuilder: UntypedFormBuilder,
+    private storageService: StorageService,
   ) { }
 
   ngOnInit(): void {
@@ -204,6 +208,7 @@ export class AddressComponent implements OnInit, OnDestroy {
           this.seoService.setTitle($localize`:@@address.component.browser-title:Address: ${this.addressString}:INTERPOLATION:`);
           this.seoService.setDescription($localize`:@@meta.description.bitcoin.address:See mempool transactions, confirmed transactions, balance, and more for ${this.stateService.network==='liquid'||this.stateService.network==='liquidtestnet'?'Liquid':'Bitcoin'}${seoDescriptionNetwork(this.stateService.network)} address ${this.addressString}:INTERPOLATION:.`);
 
+          this.showColdcardWarning = false;
           this.addressTypeInfo = new AddressTypeInfo(this.stateService.network || 'mainnet', this.addressString);
 
           return merge(
@@ -337,6 +342,8 @@ export class AddressComponent implements OnInit, OnDestroy {
         } else {
           this.setBalancePeriod('1m');
         }
+
+        this.updateShowColdcardWarning();
       },
       (error) => {
         console.log(error);
@@ -650,6 +657,29 @@ export class AddressComponent implements OnInit, OnDestroy {
       this.accelerationsSubscription = null;
       this.acceleratedTxids = null;
     }
+  }
+
+  updateShowColdcardWarning() {
+    const showCCWarningPref = this.storageService.getValue('showAddrColdcardWarning');
+
+    if (showCCWarningPref && showCCWarningPref === 'false') {
+      return;
+    }
+
+    if (!['p2sh', 'v0_p2wsh', 'p2sh-p2wsh'].includes(this.addressTypeInfo.type) || !this.addressTypeInfo.isMultisig || this.addressTypeInfo.network !== 'mainnet') {
+      return;
+    }
+
+    if (this.chainStats.balance === 0 && this.mempoolStats.balance === 0) {
+      return;
+    }
+
+    this.showColdcardWarning = true;
+  }
+
+  dismissWarning() {
+    this.storageService.setValue('showAddrColdcardWarning', 'false');
+    this.showColdcardWarning = false;
   }
 
   ngOnDestroy(): void {
